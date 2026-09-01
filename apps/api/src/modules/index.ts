@@ -14,6 +14,26 @@ import { ModerationModule } from './moderation/moderation.module';
 import { BillingModule } from './billing/billing.module';
 import { MediaModule } from './media/media.module';
 import { AuditModule } from './audit/audit.module';
+import { LifecycleModule } from './lifecycle/lifecycle.module';
 import { AdminModule } from './admin/admin.module';
 
-export const domainModules = [IdentityModule,UsersModule,AgenciesModule,PropertiesModule,ListingsModule,SearchGeoModule,SearchRequestsModule,MatchingModule,LeadsViewingsModule,MessagingModule,NotificationsModule,TrustRiskModule,ModerationModule,BillingModule,MediaModule,AuditModule,AdminModule];
+export const domainModules = [
+  IdentityModule,
+  UsersModule,
+  AgenciesModule,
+  PropertiesModule,
+  ListingsModule,
+  SearchGeoModule,
+  SearchRequestsModule,
+  MatchingModule,
+  LeadsViewingsModule,
+  MessagingModule,
+  NotificationsModule,
+  TrustRiskModule,
+  ModerationModule,
+  BillingModule,
+  MediaModule,
+  AuditModule,
+  LifecycleModule,
+  AdminModule,
+];
