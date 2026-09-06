@@ -1,4 +1,4 @@
-import { Injectable, TooManyRequestsException, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { DatabaseService } from '../../../infrastructure/database/database.service';
 import { AuthorizationService } from '../../authorization/application/authorization.service';
 import type { UserRole } from '../../authorization/domain/authorization';
@@ -27,7 +27,7 @@ export class AuthService {
   async requestEmailOtp(rawEmail: string): Promise<{ accepted: true; devCode: string | null }> {
     const email = normalizeEmail(rawEmail);
     const latest = await this.identities.latestOtpCreatedAt(email);
-    if (latest && Date.now() - latest.getTime() < OTP_RESEND_SECONDS * 1000) throw new TooManyRequestsException('Please wait before requesting another code');
+    if (latest && Date.now() - latest.getTime() < OTP_RESEND_SECONDS * 1000) throw new HttpException('Please wait before requesting another code', HttpStatus.TOO_MANY_REQUESTS);
     const code = generateOtp();
     const hash = hashWithPepper(code, required('OTP_PEPPER'));
     const challengeId = await this.identities.createOtp(email, hash, expiresAfter(new Date(), OTP_TTL_MINUTES * 60_000));
