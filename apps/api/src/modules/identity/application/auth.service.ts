@@ -10,6 +10,7 @@ import { ACCESS_TTL_MINUTES, OTP_RESEND_SECONDS, OTP_TTL_MINUTES, REFRESH_TTL_DA
 
 export type AuthenticatedActor = { user: User; roles: UserRole[] };
 export type IssuedSession = { accessToken: string; refreshToken: string; accessExpiresAt: Date; refreshExpiresAt: Date };
+type RequestContext = { ip: string | undefined; userAgent: string | undefined };
 
 function required(name: string): string { const value = process.env[name]; if (!value) throw new Error(`Missing required environment variable: ${name}`); return value; }
 function contextHash(value: string | undefined): string | null { return value ? hashWithPepper(value, required('SECURITY_HASH_PEPPER')) : null; }
@@ -40,7 +41,7 @@ export class AuthService {
     }
   }
 
-  async verifyEmailOtp(rawEmail: string, code: string, context: { ip?: string; userAgent?: string }): Promise<{ actor: AuthenticatedActor; session: IssuedSession }> {
+  async verifyEmailOtp(rawEmail: string, code: string, context: RequestContext): Promise<{ actor: AuthenticatedActor; session: IssuedSession }> {
     const email = normalizeEmail(rawEmail);
     const codeHash = hashWithPepper(code, required('OTP_PEPPER'));
     return this.db.transaction(async (tx) => {
@@ -70,7 +71,7 @@ export class AuthService {
     return actor;
   }
 
-  async rotateRefresh(refreshToken: string, context: { ip?: string; userAgent?: string }): Promise<IssuedSession> {
+  async rotateRefresh(refreshToken: string, context: RequestContext): Promise<IssuedSession> {
     return this.db.transaction(async (tx) => {
       const old = await this.identities.findByRefreshHash(hashToken(refreshToken), tx);
       if (!old) throw new UnauthorizedException('Refresh session expired');
@@ -89,7 +90,7 @@ export class AuthService {
     });
   }
 
-  private async issueSession(userId: string, context: { ip?: string; userAgent?: string }, rotatedFromId: string | null, tx: import('../../../infrastructure/database/query-executor').QueryExecutor): Promise<IssuedSession> {
+  private async issueSession(userId: string, context: RequestContext, rotatedFromId: string | null, tx: import('../../../infrastructure/database/query-executor').QueryExecutor): Promise<IssuedSession> {
     const now = new Date();
     const accessToken = generateOpaqueToken();
     const refreshToken = generateOpaqueToken();
