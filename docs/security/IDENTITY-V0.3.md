@@ -12,12 +12,12 @@
 - refresh/logout يتطلبان double-submit CSRF token.
 
 ## Lifecycle
-`last_login_at` سجل أمني لعمليات الدخول. `last_active_at` هو مصدر قرار الخمول، ويتم تحديثه بحد أقصى مرة في الساعة أثناء استعمال جلسة صحيحة. هذا يمنع حذف وسائط مستخدم نشط لمجرد أن جلسته طويلة.
+`last_login_at` سجل أمني لعمليات الدخول. `last_active_at` هو مصدر قرار الخمول، ويتم تحديثه بحد أقصى مرة في الساعة أثناء استعمال جلسة صحيحة. هذا يمنع حذف وسائط مستخدم نشط لمجرد أن جلسته طويلة. تسجيل الدخول لا يمسح `media_pruned_at`؛ إعادة رفع الوسائط في Media هي التي تعيد حالة الوسائط لاحقًا.
 
 ## حدود البيانات
 - Users repository يملك `accounts.users` فقط.
 - Identity repository يملك `identity.*` فقط.
-- Authorization repository يملك `authorization.*` فقط.
+- Authorization repository يملك `access_control.*` فقط.
 - التنسيق عبر Services/Ports، ولا تستعلم وحدة مباشرة من جدول نطاق آخر.
 
 ## ما يمنع إقفال Phase 2 حاليًا
