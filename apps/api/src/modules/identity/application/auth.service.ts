@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { DatabaseService } from '../../../infrastructure/database/database.service';
+import type { QueryExecutor } from '../../../infrastructure/database/query-executor';
 import { AuthorizationService } from '../../authorization/application/authorization.service';
 import type { UserRole } from '../../authorization/domain/authorization';
 import { UsersService } from '../../users/application/users.service';
@@ -44,7 +45,7 @@ export class AuthService {
   async verifyEmailOtp(rawEmail: string, code: string, context: RequestContext): Promise<{ actor: AuthenticatedActor; session: IssuedSession }> {
     const email = normalizeEmail(rawEmail);
     const codeHash = hashWithPepper(code, required('OTP_PEPPER'));
-    return this.db.transaction(async (tx) => {
+    const result = await this.db.transaction(async (tx) => {
       if (!(await this.identities.consumeOtp(email, codeHash, tx))) throw new UnauthorizedException('Invalid or expired verification code');
       let userId = await this.identities.findUserIdByEmail(email, tx);
       if (!userId) {
@@ -54,12 +55,15 @@ export class AuthService {
         else await this.authorization.grantDefaultRole(created.id, tx);
         userId = claimedUserId;
       }
+      const user = await this.users.getById(userId, tx);
+      if (user.status !== 'active') throw new UnauthorizedException('Account is not active');
       const now = new Date();
       await this.users.markLogin(userId, now, tx);
       const session = await this.issueSession(userId, context, null, tx);
-      const actor = await this.loadActor(userId);
-      return { actor, session };
+      return { userId, session };
     });
+    const actor = await this.loadActor(result.userId);
+    return { actor, session: result.session };
   }
 
   async authenticateAccess(accessToken: string): Promise<AuthenticatedActor> {
@@ -75,10 +79,12 @@ export class AuthService {
     return this.db.transaction(async (tx) => {
       const old = await this.identities.findByRefreshHash(hashToken(refreshToken), tx);
       if (!old) throw new UnauthorizedException('Refresh session expired');
+      const user = await this.users.getById(old.userId, tx);
+      if (user.status !== 'active') throw new UnauthorizedException('Account is not active');
       const now = new Date();
       await this.identities.revokeSession(old.id, now, tx);
       const next = await this.issueSession(old.userId, context, old.id, tx);
-      await this.users.markLogin(old.userId, now, tx);
+      await this.users.touchActivity(old.userId, now, tx);
       return next;
     });
   }
@@ -90,7 +96,7 @@ export class AuthService {
     });
   }
 
-  private async issueSession(userId: string, context: RequestContext, rotatedFromId: string | null, tx: import('../../../infrastructure/database/query-executor').QueryExecutor): Promise<IssuedSession> {
+  private async issueSession(userId: string, context: RequestContext, rotatedFromId: string | null, tx: QueryExecutor): Promise<IssuedSession> {
     const now = new Date();
     const accessToken = generateOpaqueToken();
     const refreshToken = generateOpaqueToken();

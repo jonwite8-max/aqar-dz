@@ -53,7 +53,7 @@ export class PostgresUsersRepository extends UsersRepository {
   }
 
   async markLogin(id: string, now: Date, tx?: QueryExecutor): Promise<void> {
-    await this.q(tx).query('UPDATE accounts.users SET last_login_at=$2,last_active_at=$2,updated_at=$2,media_pruned_at=NULL WHERE id=$1', [id, now]);
+    await this.q(tx).query('UPDATE accounts.users SET last_login_at=$2,last_active_at=$2,updated_at=$2 WHERE id=$1', [id, now]);
   }
 
   async touchActivity(id: string, now: Date, tx?: QueryExecutor): Promise<void> {

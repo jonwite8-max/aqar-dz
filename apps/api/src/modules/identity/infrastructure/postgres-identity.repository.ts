@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { QueryResultRow } from 'pg';
 import { DatabaseService } from '../../../infrastructure/database/database.service';
 import type { QueryExecutor } from '../../../infrastructure/database/query-executor';
+import { OTP_MAX_ATTEMPTS } from '../domain/auth-policy';
 import { IdentityRepository, type SessionRecord } from '../application/identity.repository';
 
 type DateRow = QueryResultRow & { created_at: Date };
@@ -32,10 +33,15 @@ export class PostgresIdentityRepository extends IdentityRepository {
       WHERE identity_kind='email' AND normalized_value=$1 AND consumed_at IS NULL
       ORDER BY created_at DESC LIMIT 1 FOR UPDATE
     )
-    UPDATE identity.otp_challenges c SET attempts=c.attempts+1,
-      consumed_at=CASE WHEN candidate.code_hash=$2 AND candidate.expires_at>now() AND candidate.attempts<5 THEN now() ELSE c.consumed_at END
+    UPDATE identity.otp_challenges c SET
+      attempts=LEAST(candidate.attempts+1,$3),
+      consumed_at=CASE
+        WHEN candidate.code_hash=$2 AND candidate.expires_at>now() AND candidate.attempts<$3 THEN now()
+        WHEN candidate.attempts+1 >= $3 THEN now()
+        ELSE c.consumed_at
+      END
     FROM candidate WHERE c.id=candidate.id
-    RETURNING (candidate.code_hash=$2 AND candidate.expires_at>now() AND candidate.attempts<5) AS valid`, [email, codeHash]);
+    RETURNING (candidate.code_hash=$2 AND candidate.expires_at>now() AND candidate.attempts<$3) AS valid`, [email, codeHash, OTP_MAX_ATTEMPTS]);
     return result.rows[0]?.valid === true;
   }
   async findUserIdByEmail(email: string, tx?: QueryExecutor): Promise<string | null> {
