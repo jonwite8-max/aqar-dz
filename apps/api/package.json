@@ -1,25 +1,38 @@
 {
   "name": "@aqar/api",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "scripts": {
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "build": "nest build",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs && node --import tsx --test tests/*.test.ts",
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
     "@nestjs/core": "^11.1.6",
     "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/throttler": "^6.5.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "nodemailer": "^10.0.0",
+    "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.3",
     "@types/node": "^22.18.0",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.15.5",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }
 }

@@ -12,7 +12,13 @@ fi
 COMPOSE="docker compose --env-file .env.production -f infra/production/docker-compose.yml"
 $COMPOSE config >/dev/null
 $COMPOSE build
-$COMPOSE up -d
+
+# Data services stay compatible with the previously running application while
+# expand-only migrations are applied. A migration failure stops deployment
+# before the new API/Web containers replace the current application.
+$COMPOSE up -d postgres redis minio
+$COMPOSE run --rm api pnpm --filter @aqar/api db:migrate
+$COMPOSE up -d api web nginx
 
 echo "Waiting for API health..."
 tries=0

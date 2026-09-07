@@ -1,5 +1,6 @@
 import { IdentityModule } from './identity/identity.module';
 import { UsersModule } from './users/users.module';
+import { AuthorizationModule } from './authorization/authorization.module';
 import { AgenciesModule } from './agencies/agencies.module';
 import { PropertiesModule } from './properties/properties.module';
 import { ListingsModule } from './listings/listings.module';
@@ -14,26 +15,7 @@ import { ModerationModule } from './moderation/moderation.module';
 import { BillingModule } from './billing/billing.module';
 import { MediaModule } from './media/media.module';
 import { AuditModule } from './audit/audit.module';
-import { LifecycleModule } from './lifecycle/lifecycle.module';
 import { AdminModule } from './admin/admin.module';
+import { LifecycleModule } from './lifecycle/lifecycle.module';
 
-export const domainModules = [
-  IdentityModule,
-  UsersModule,
-  AgenciesModule,
-  PropertiesModule,
-  ListingsModule,
-  SearchGeoModule,
-  SearchRequestsModule,
-  MatchingModule,
-  LeadsViewingsModule,
-  MessagingModule,
-  NotificationsModule,
-  TrustRiskModule,
-  ModerationModule,
-  BillingModule,
-  MediaModule,
-  AuditModule,
-  LifecycleModule,
-  AdminModule,
-];
+export const domainModules = [IdentityModule,UsersModule,AuthorizationModule,AgenciesModule,PropertiesModule,ListingsModule,SearchGeoModule,SearchRequestsModule,MatchingModule,LeadsViewingsModule,MessagingModule,NotificationsModule,TrustRiskModule,ModerationModule,BillingModule,MediaModule,AuditModule,AdminModule,LifecycleModule];

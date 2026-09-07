@@ -22,3 +22,49 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  identity-integration:
+    needs: verify
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_DB: aqar
+          POSTGRES_USER: aqar
+          POSTGRES_PASSWORD: aqar_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U aqar -d aqar"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      API_PORT: 4000
+      WEB_ORIGIN: http://localhost:3000
+      DATABASE_URL: postgresql://aqar:aqar_ci@127.0.0.1:5432/aqar
+      DATABASE_POOL_MAX: 5
+      OTP_PEPPER: ci-otp-pepper-not-for-production-0001
+      SECURITY_HASH_PEPPER: ci-security-pepper-not-production-01
+      OTP_DEV_ECHO: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile=false
+      - name: Apply database migrations
+        run: pnpm --filter @aqar/api db:migrate
+      - name: Build API
+        run: pnpm --filter @aqar/api build
+      - name: Run identity E2E against PostGIS
+        run: |
+          node apps/api/dist/main.js > /tmp/aqar-api.log 2>&1 &
+          API_PID=$!
+          trap 'kill "$API_PID" 2>/dev/null || true; cat /tmp/aqar-api.log' EXIT
+          node scripts/identity-e2e.mjs
